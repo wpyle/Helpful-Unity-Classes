@@ -5,6 +5,7 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -29,21 +30,21 @@ public class EditorButtonAttribute : PropertyAttribute
     /// <summary>
     ///  Button with custom text and set color.  NOTE: Only mark one color property as true. Later ones listed will overwrite previous ones.
     /// </summary>
-    public EditorButtonAttribute(string buttonText, int spaceBefore = 10,  bool white = false, bool cyan = false, bool blue = false,
-        bool yellow = false,  bool green = false, bool magenta = false, bool red = false, bool gray = false, bool black = false)
+    public EditorButtonAttribute(string buttonText, int spaceBefore = 10, bool white = false, bool cyan = false, bool blue = false,
+        bool yellow = false, bool green = false, bool magenta = false, bool red = false, bool gray = false, bool black = false)
     {
         this.buttonText = buttonText;
         this.spaceBefore = spaceBefore;
 
-        if (white)   color = Color.white;
-        if (cyan)    color = Color.cyan;
-        if (blue)    color = Color.blue;
-        if (yellow)  color = Color.yellow;
-        if (green)   color = Color.green;
+        if (white) color = Color.white;
+        if (cyan) color = Color.cyan;
+        if (blue) color = Color.blue;
+        if (yellow) color = Color.yellow;
+        if (green) color = Color.green;
         if (magenta) color = Color.magenta;
-        if (red)     color = Color.red;
-        if (gray)    color = Color.gray;
-        if (black)   color = Color.black;
+        if (red) color = Color.red;
+        if (gray) color = Color.gray;
+        if (black) color = Color.black;
     }
     /// <summary>
     /// Button with text as method name and set color.
@@ -53,15 +54,15 @@ public class EditorButtonAttribute : PropertyAttribute
     {
         this.spaceBefore = spaceBefore;
 
-        if (white)   color = Color.white;
-        if (cyan)    color = Color.cyan;
-        if (blue)    color = Color.blue;
-        if (yellow)  color = Color.yellow;
-        if (green)   color = Color.green;
+        if (white) color = Color.white;
+        if (cyan) color = Color.cyan;
+        if (blue) color = Color.blue;
+        if (yellow) color = Color.yellow;
+        if (green) color = Color.green;
         if (magenta) color = Color.magenta;
-        if (red)     color = Color.red;
-        if (gray)    color = Color.gray;
-        if (black)   color = Color.black;
+        if (red) color = Color.red;
+        if (gray) color = Color.gray;
+        if (black) color = Color.black;
     }
     /// <summary>
     /// Button with custom text and custom color. No alpha.
@@ -110,7 +111,7 @@ public class EditorButton : Editor
         var mono = target as MonoBehaviour;
 
         var methods = mono.GetType()
-            .GetMembers(BindingFlags.Instance | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
+            .GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
                         BindingFlags.NonPublic)
             .Where(o => Attribute.IsDefined(o, typeof(EditorButtonAttribute)));
 
@@ -129,7 +130,24 @@ public class EditorButton : Editor
             if (GUILayout.Button(buttonText))
             {
                 var method = memberInfo as MethodInfo;
-                method.Invoke(mono, null);
+
+                ParameterInfo[] parameters = method.GetParameters();
+                List<object> newCollection = new List<object>();
+                foreach(var param in parameters)
+                {
+                    if (!param.HasDefaultValue)
+                    {
+                        Debug.LogError("EditorButtonAttribute only works on methods that contain exclusively parameters with default values." +
+                            " Parameter '" + param.Name + "' does not have a default value.");
+                        return;
+                    }
+                    var newParam = param.DefaultValue;
+                    newCollection.Add(newParam);
+                }
+
+                object[] objArry = newCollection.ToArray<object>();
+               
+                method.Invoke(mono, objArry);
             }
             GUI.backgroundColor = defaultColor;
         }
