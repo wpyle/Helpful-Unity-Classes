@@ -1,6 +1,11 @@
-﻿// Initial Concept by http://www.reddit.com/user/zaikman
-// Revised by http://www.reddit.com/user/quarkism
-// Extended by William Pyle 2020 http://www.wpyle.com
+﻿/*
+ * =========================================================
+ *     Exposes methods as buttons in the Unity Inspector.
+ *     Does not work with methods without default params.
+ * 
+ *     William Pyle 2020 (wpyle.com)
+ * =========================================================
+ */
 
 using System;
 using System.Linq;
@@ -18,14 +23,9 @@ using System.Reflection;
 [System.AttributeUsage(System.AttributeTargets.Method)]
 public class EditorButtonAttribute : PropertyAttribute
 {
-    private string buttonText = null;
-    public string ButtonText => buttonText;
-
-    private int spaceBefore;
-    public int SpaceBefore => spaceBefore;
-
-    private Color color = GUI.backgroundColor;
-    public Color Color => color;
+    public string ButtonText { get; } = null;
+    public int SpaceBefore { get; }
+    public Color Color { get; } = GUI.backgroundColor;
 
     /// <summary>
     ///  Button with custom text and set color.  NOTE: Only mark one color property as true. Later ones listed will overwrite previous ones.
@@ -33,18 +33,18 @@ public class EditorButtonAttribute : PropertyAttribute
     public EditorButtonAttribute(string buttonText, int spaceBefore = 10, bool white = false, bool cyan = false, bool blue = false,
         bool yellow = false, bool green = false, bool magenta = false, bool red = false, bool gray = false, bool black = false)
     {
-        this.buttonText = buttonText;
-        this.spaceBefore = spaceBefore;
+        this.ButtonText = buttonText;
+        this.SpaceBefore = spaceBefore;
 
-        if (white) color = Color.white;
-        if (cyan) color = Color.cyan;
-        if (blue) color = Color.blue;
-        if (yellow) color = Color.yellow;
-        if (green) color = Color.green;
-        if (magenta) color = Color.magenta;
-        if (red) color = Color.red;
-        if (gray) color = Color.gray;
-        if (black) color = Color.black;
+        if (white) Color = Color.white;
+        if (cyan) Color = Color.cyan;
+        if (blue) Color = Color.blue;
+        if (yellow) Color = Color.yellow;
+        if (green) Color = Color.green;
+        if (magenta) Color = Color.magenta;
+        if (red) Color = Color.red;
+        if (gray) Color = Color.gray;
+        if (black) Color = Color.black;
     }
     /// <summary>
     /// Button with text as method name and set color.
@@ -52,56 +52,57 @@ public class EditorButtonAttribute : PropertyAttribute
     public EditorButtonAttribute(int spaceBefore = 10, bool white = false, bool cyan = false, bool blue = false,
         bool yellow = false, bool green = false, bool magenta = false, bool red = false, bool gray = false, bool black = false)
     {
-        this.spaceBefore = spaceBefore;
+        this.SpaceBefore = spaceBefore;
 
-        if (white) color = Color.white;
-        if (cyan) color = Color.cyan;
-        if (blue) color = Color.blue;
-        if (yellow) color = Color.yellow;
-        if (green) color = Color.green;
-        if (magenta) color = Color.magenta;
-        if (red) color = Color.red;
-        if (gray) color = Color.gray;
-        if (black) color = Color.black;
+        if (white) Color = Color.white;
+        if (cyan) Color = Color.cyan;
+        if (blue) Color = Color.blue;
+        if (yellow) Color = Color.yellow;
+        if (green) Color = Color.green;
+        if (magenta) Color = Color.magenta;
+        if (red) Color = Color.red;
+        if (gray) Color = Color.gray;
+        if (black) Color = Color.black;
     }
     /// <summary>
     /// Button with custom text and custom color. No alpha.
     /// </summary>
     public EditorButtonAttribute(string buttonText, float colorR, float colorG, float colorB, int spaceBefore = 10)
     {
-        this.buttonText = buttonText;
-        this.spaceBefore = spaceBefore;
-        this.color = new Color(colorR, colorG, colorB);
+        this.ButtonText = buttonText;
+        this.SpaceBefore = spaceBefore;
+        this.Color = new Color(colorR, colorG, colorB);
     }
     /// <summary>
     /// Button with text as method name and custom color. No alpha.
     /// </summary>
     public EditorButtonAttribute(float colorR, float colorG, float colorB, int spaceBefore = 10)
     {
-        this.spaceBefore = spaceBefore;
-        this.color = new Color(colorR, colorG, colorB);
+        this.SpaceBefore = spaceBefore;
+        this.Color = new Color(colorR, colorG, colorB);
     }
     /// <summary>
     /// Button with custom text and custom color. With alpha.
     /// </summary>
     public EditorButtonAttribute(string buttonText, float colorR, float colorG, float colorB, float colorA, int spaceBefore = 10)
     {
-        this.buttonText = buttonText;
-        this.spaceBefore = spaceBefore;
-        this.color = new Color(colorR, colorG, colorB, colorA);
+        this.ButtonText = buttonText;
+        this.SpaceBefore = spaceBefore;
+        this.Color = new Color(colorR, colorG, colorB, colorA);
     }
     /// <summary>
     /// Button with text as method name and custom color. With alpha.
     /// </summary>
     public EditorButtonAttribute(float colorR, float colorG, float colorB, float colorA, int spaceBefore = 10)
     {
-        this.spaceBefore = spaceBefore;
-        this.color = new Color(colorR, colorG, colorB, colorA);
+        this.SpaceBefore = spaceBefore;
+        this.Color = new Color(colorR, colorG, colorB, colorA);
     }
 }
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(MonoBehaviour), true)]
+[CanEditMultipleObjects]
 public class EditorButton : Editor
 {
     public override void OnInspectorGUI()
@@ -110,6 +111,8 @@ public class EditorButton : Editor
 
         var mono = target as MonoBehaviour;
 
+        if (mono == null) return;
+        
         var methods = mono.GetType()
             .GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public |
                         BindingFlags.NonPublic)
@@ -125,29 +128,29 @@ public class EditorButton : Editor
 
             GUILayout.Space(attr.SpaceBefore);
 
-            Color defaultColor = GUI.backgroundColor;
+            var defaultColor = GUI.backgroundColor;
             GUI.backgroundColor = attr.Color;
             if (GUILayout.Button(buttonText))
             {
                 var method = memberInfo as MethodInfo;
 
-                ParameterInfo[] parameters = method.GetParameters();
-                List<object> newCollection = new List<object>();
+                var parameters = method?.GetParameters();
+                var newCollection = new List<object>();
                 foreach(var param in parameters)
                 {
                     if (!param.HasDefaultValue)
                     {
                         Debug.LogError("EditorButtonAttribute only works on methods that contain exclusively parameters with default values." +
-                            " Parameter '" + param.Name + "' does not have a default value.");
+                                       " Parameter '" + param.Name + "' does not have a default value.");
                         return;
                     }
                     var newParam = param.DefaultValue;
                     newCollection.Add(newParam);
                 }
 
-                object[] objArry = newCollection.ToArray<object>();
+                var objArry = newCollection.ToArray<object>();
                
-                method.Invoke(mono, objArry);
+                method?.Invoke(mono, objArry);
             }
             GUI.backgroundColor = defaultColor;
         }

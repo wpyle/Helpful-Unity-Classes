@@ -1,4 +1,11 @@
-﻿//Created by William Pyle 2020 http://wpyle.com
+﻿/*
+ * =========================================================
+ *     Class to contain utility functions pertaining to
+ *     ScriptableObject Asset Managment.
+ * 
+ *     William Pyle 2020 (wpyle.com)
+ * =========================================================
+ */
 
 using System.Collections.Generic;
 using UnityEditor;
